@@ -1,0 +1,39 @@
+# === 기본 설정 ===
+# 줄바꿈 문자 통일 (Windows 개발 환경 + Linux 서버 고려)
+* text=auto eol=lf
+
+# === Java / Gradle ===
+*.java text diff=java
+*.gradle text
+*.properties text
+*.yml text
+*.yaml text
+*.xml text
+*.sql text
+*.md text
+*.sh text eol=lf
+
+# === IDE & 환경 설정 파일 ===
+*.iml text
+*.ipr text
+*.iws text
+*.bat text eol=crlf
+
+# === 이미지, 바이너리 파일 ===
+*.jar binary
+*.war binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+
+# === OS / 에디터 관련 ===
+.DS_Store binary
+Thumbs.db binary
+
+# === Git Large File Storage (옵션) ===
+# 만약 LFS 쓴다면 아래처럼 활성화 가능
+# *.zip filter=lfs diff=lfs merge=lfs -text
+# *.mp4 filter=lfs diff=lfs merge=lfs -text
