@@ -23,7 +23,7 @@ redis:
   port: 6379
 
 jwt:
-  secret: edutrack-super-secret-key
+  secret: abcdefghijklmnopqrstuvwx12345678
   expiration:
     access: 3600000        # 1시간
     refresh: 604800000     # 7일

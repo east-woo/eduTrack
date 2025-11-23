@@ -1,5 +1,6 @@
 package com.eastwoo.toy.edutrack.auth.controller;
 
+import com.eastwoo.toy.edutrack.auth.dto.AuthResponse;
 import com.eastwoo.toy.edutrack.auth.entity.User;
 import com.eastwoo.toy.edutrack.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -17,9 +18,12 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestParam String email, @RequestParam String password) {
-        String token = authService.login(email, password);
-        return ResponseEntity.ok(token);
+    public ResponseEntity<AuthResponse> login(
+            @RequestParam String email,
+            @RequestParam String password) {
+
+        AuthResponse response = authService.login(email, password);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/register")
