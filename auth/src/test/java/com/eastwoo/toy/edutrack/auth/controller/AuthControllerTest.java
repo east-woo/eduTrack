@@ -3,6 +3,7 @@ package com.eastwoo.toy.edutrack.auth.controller;
 
 import com.eastwoo.toy.edutrack.auth.dto.AuthResponse;
 import com.eastwoo.toy.edutrack.auth.entity.User;
+import com.eastwoo.toy.edutrack.auth.enumtype.UserRole;
 import com.eastwoo.toy.edutrack.auth.repository.UserRepository;
 import com.eastwoo.toy.edutrack.auth.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,37 +45,36 @@ class AuthControllerTest {
 
     @Test
     void 회원가입_성공() throws Exception {
-        // Given: 회원가입 요청 데이터
+        // Given
         String name = "홍길동";
         String email = "hong@company.com";
         String password = "password123";
-        String role = "STUDENT";
 
-        // When: 회원가입 API 호출
+        // When
         mockMvc.perform(post("/api/auth/register")
                         .param("name", name)
                         .param("email", email)
                         .param("password", password)
-                        .param("role", role)
                         .with(csrf()))
-                // Then: 상태 200 OK, 응답 JSON 검증
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", notNullValue()))
                 .andExpect(jsonPath("$.name").value(name))
-                .andExpect(jsonPath("$.email").value(email));
+                .andExpect(jsonPath("$.email").value(email))
+                .andExpect(jsonPath("$.role").value("STUDENT")); // Enum이 STUDENT로 저장되는지 확인
     }
 
     @Test
     void 로그인_성공_및_리프레시토큰_저장() throws Exception {
-        // Given: 회원가입된 사용자
-        User user = authService.register("홍길동", "hong@company.com", "password123", "STUDENT");
+        // Given
+        User user = authService.register("홍길동", "hong@company.com", "password123", UserRole.STUDENT);
 
-        // When: 로그인 요청
+        // When
         String response = mockMvc.perform(post("/api/auth/login")
                         .param("email", "hong@company.com")
                         .param("password", "password123")
                         .with(csrf()))
-                // Then: 상태 200 OK, accessToken과 refreshToken 존재
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken", notNullValue()))
                 .andExpect(jsonPath("$.refreshToken", notNullValue()))
@@ -82,7 +82,7 @@ class AuthControllerTest {
                 .getResponse()
                 .getContentAsString();
 
-        // Then: Redis에 refreshToken 저장됨
+        // Redis에 refreshToken 저장 여부 확인
         String redisKey = "refreshToken:" + user.getId();
         String refreshToken = redisTemplate.opsForValue().get(redisKey);
         assert refreshToken != null;
@@ -90,11 +90,10 @@ class AuthControllerTest {
 
     @Test
     void 로그인_실패_비밀번호_틀림() throws Exception {
-        // Given: 회원가입된 사용자
-        User user = authService.register("홍길동", "hong@company.com", "password123", "STUDENT");
+        // Given
+        User user = authService.register("홍길동", "hong@company.com", "password123", UserRole.STUDENT);
 
-        // When: 잘못된 비밀번호로 로그인 시도
-        // Then: 상태 401 Unauthorized
+        // When & Then
         mockMvc.perform(post("/api/auth/login")
                         .param("email", "hong@company.com")
                         .param("password", "wrongpassword")
@@ -104,27 +103,27 @@ class AuthControllerTest {
 
     @Test
     void 리프레시토큰_성공_재발급() {
-        // Given: 회원가입 및 로그인으로 받은 refreshToken
-        User user = authService.register("홍길동", "hong@company.com", "password123", "STUDENT");
+        // Given
+        User user = authService.register("홍길동", "hong@company.com", "password123", UserRole.STUDENT);
         AuthResponse authResponse = authService.login("hong@company.com", "password123");
 
-        // When: refreshToken으로 액세스 토큰 재발급
+        // When
         String newAccessToken = authService.refreshAccessToken(authResponse.getRefreshToken());
 
-        // Then: 새 액세스 토큰이 존재해야 함
+        // Then
         assert newAccessToken != null && !newAccessToken.isEmpty();
     }
 
     @Test
     void 리프레시토큰_실패_만료또는_잘못된토큰() {
-        // Given: 회원가입된 사용자와 잘못된 refreshToken
-        User user = authService.register("홍길동", "hong@company.com", "password123", "STUDENT");
+        // Given
+        User user = authService.register("홍길동", "hong@company.com", "password123", UserRole.STUDENT);
         String invalidToken = "invalid-token";
 
-        // When & Then: refreshToken 재발급 시도 시 예외 발생
+        // When & Then
         try {
             authService.refreshAccessToken(invalidToken);
-            assert false; // 예외가 발생해야 함
+            assert false; // 예외 발생해야 정상
         } catch (Exception e) {
             assert true;
         }

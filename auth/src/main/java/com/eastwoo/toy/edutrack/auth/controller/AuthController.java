@@ -2,6 +2,7 @@ package com.eastwoo.toy.edutrack.auth.controller;
 
 import com.eastwoo.toy.edutrack.auth.dto.AuthResponse;
 import com.eastwoo.toy.edutrack.auth.entity.User;
+import com.eastwoo.toy.edutrack.auth.enumtype.UserRole;
 import com.eastwoo.toy.edutrack.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -29,9 +30,8 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<User> register(@RequestParam String name,
                                          @RequestParam String email,
-                                         @RequestParam String password,
-                                         @RequestParam(defaultValue = "STUDENT") String role) {
-        User user = authService.register(name, email, password, role);
+                                         @RequestParam String password) {
+        User user = authService.register(name, email, password, UserRole.STUDENT);
         return ResponseEntity.ok(user);
     }
 }

@@ -1,5 +1,7 @@
 package com.eastwoo.toy.edutrack.auth.entity;
 
+import com.eastwoo.toy.edutrack.auth.enumtype.UserRole;
+import com.eastwoo.toy.edutrack.auth.enumtype.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,12 +29,17 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String role = "STUDENT";
+    @Builder.Default
+    private UserRole role = UserRole.STUDENT;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status = "ACTIVE";
+    @Builder.Default
+    private UserStatus status = UserStatus.ACTIVE;
 
     @Column(name = "created_at", nullable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }

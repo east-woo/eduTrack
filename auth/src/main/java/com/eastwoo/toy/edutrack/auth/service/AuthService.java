@@ -2,6 +2,7 @@ package com.eastwoo.toy.edutrack.auth.service;
 
 import com.eastwoo.toy.edutrack.auth.dto.AuthResponse;
 import com.eastwoo.toy.edutrack.auth.entity.User;
+import com.eastwoo.toy.edutrack.auth.enumtype.UserRole;
 import com.eastwoo.toy.edutrack.auth.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -11,7 +12,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -24,7 +24,6 @@ public class AuthService {
     private final RedisTemplate<String, String> redisTemplate;
 
     /* 로그인 메서드 */
-
     public AuthResponse login(String email, String password) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BadCredentialsException("사용자를 찾을 수 없습니다."));
@@ -43,7 +42,7 @@ public class AuthService {
     }
 
     /*회원가입*/
-    public User register(String name, String email, String password, String role) {
+    public User register(String name, String email, String password, UserRole role) {
         // 이메일 중복 체크: 이미 해당 이메일로 등록된 사용자가 있는지 확인
         if (userRepository.findByEmail(email).isPresent()) {
             // 이메일 중복 시 예외를 발생시킴
@@ -60,7 +59,7 @@ public class AuthService {
         return userRepository.save(user);
     }
 
-
+    /*AccessToken 재발행*/
     public String refreshAccessToken(String refreshToken) {
         try {
             // 1. 리프레시 토큰 파싱 및 유효성 검사

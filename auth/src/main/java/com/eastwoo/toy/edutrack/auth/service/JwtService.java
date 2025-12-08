@@ -1,5 +1,6 @@
 package com.eastwoo.toy.edutrack.auth.service;
 
+import com.eastwoo.toy.edutrack.auth.enumtype.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -47,10 +48,10 @@ public class JwtService {
      * @param role 사용자의 역할(Role)을 토큰의 클레임에 추가
      * @return 생성된 JWT 액세스 토큰 (문자열)
      */
-    public String generateAccessToken(Long userId, String role) {
+    public String generateAccessToken(Long userId,  UserRole role) {
         return Jwts.builder()
                 .setSubject(userId.toString()) // 사용자 ID를 주제로 설정
-                .claim("role", role) // 역할(Role)을 클레임에 추가
+                .claim("role", role.name()) // 역할(Role)을 클레임에 추가
                 .setIssuedAt(new Date()) // 생성 시간
                 .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration)) // 만료 시간
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256) // 서명을 포함
