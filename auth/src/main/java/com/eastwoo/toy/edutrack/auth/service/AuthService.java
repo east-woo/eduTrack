@@ -1,8 +1,11 @@
 package com.eastwoo.toy.edutrack.auth.service;
 
 import com.eastwoo.toy.edutrack.auth.dto.AuthResponse;
+import com.eastwoo.toy.edutrack.auth.dto.TeacherRegisterRequest;
+import com.eastwoo.toy.edutrack.auth.entity.InviteToken;
 import com.eastwoo.toy.edutrack.auth.entity.User;
 import com.eastwoo.toy.edutrack.auth.enumtype.UserRole;
+import com.eastwoo.toy.edutrack.auth.enumtype.UserStatus;
 import com.eastwoo.toy.edutrack.auth.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -21,6 +24,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final InviteTokenService inviteTokenService;
     private final RedisTemplate<String, String> redisTemplate;
 
     /* 로그인 메서드 */
@@ -76,5 +80,24 @@ public class AuthService {
             // 리프레시 토큰이 유효하지 않음
             throw new RuntimeException("토큰이 유효하지 않거나 만료되었습니다.");
         }
+    }
+
+    public User registerTeacher(TeacherRegisterRequest request) {
+
+        InviteToken invite = inviteTokenService.validateToken(request.token());
+
+        User teacher = User.builder()
+                .name(request.name())
+                .email(invite.getEmail())
+                .password(passwordEncoder.encode(request.password()))
+                .role(UserRole.TEACHER)
+                .status(UserStatus.ACTIVE)
+                .build();
+
+        userRepository.save(teacher);
+
+        inviteTokenService.expireToken(invite);
+
+        return teacher;
     }
 }

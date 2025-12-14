@@ -19,7 +19,8 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable) // 테스트나 API 전용일 때
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/**",
+                                "/api/instructors/register").permitAll()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(withDefaults());
