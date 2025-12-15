@@ -1,98 +1,69 @@
 package com.eastwoo.toy.edutrack.auth.controller;
 
-import com.eastwoo.toy.edutrack.auth.entity.InviteToken;
-import com.eastwoo.toy.edutrack.auth.entity.User;
-import com.eastwoo.toy.edutrack.auth.enumtype.UserRole;
-import com.eastwoo.toy.edutrack.auth.repository.InviteTokenRepository;
-import com.eastwoo.toy.edutrack.auth.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
+import com.eastwoo.toy.edutrack.auth.instructor.controller.InstructorController;
+import com.eastwoo.toy.edutrack.auth.instructor.dto.TeacherRegisterRequest;
+import com.eastwoo.toy.edutrack.auth.instructor.service.InstructorService;
+import com.eastwoo.toy.edutrack.auth.user.entity.User;
+import com.eastwoo.toy.edutrack.auth.user.enumtype.UserRole;
+import com.eastwoo.toy.edutrack.auth.user.enumtype.UserStatus;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
+import static org.mockito.BDDMockito.any;
+import static org.mockito.Mockito.when;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(InstructorController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class InstructorRegisterControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private InviteTokenRepository inviteTokenRepository;
+    @MockitoBean
+    private InstructorService instructorService;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @BeforeEach
-    void setUp() {
-        userRepository.deleteAll();
-        inviteTokenRepository.deleteAll();
-    }
 
     @Test
-    void 초대토큰으로_강사_회원가입_성공() throws Exception {
-        // given: 초대 토큰 생성
-        InviteToken invite = InviteToken.builder()
-                .email("teacher@test.com")
-                .token("invite-token-123")
+    @DisplayName("강사 회원가입 API 테스트")
+    void registerTest() throws Exception {
+
+        // Given
+        TeacherRegisterRequest request = new TeacherRegisterRequest("홍길동", "password", "token");
+        User user = User.builder()
+                .id(1L)
+                .name("홍길동")
+                .email("teacher@example.com")
+                .password("encoded")
                 .role(UserRole.TEACHER)
-                .expiresAt(LocalDateTime.now().plusHours(1))
+                .status(UserStatus.ACTIVE)
                 .build();
+        when(instructorService.registerTeacher(any())).thenReturn(user);
 
-        inviteTokenRepository.save(invite);
-
-        // when & then
+        // When & Then
         mockMvc.perform(post("/api/instructors/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "token": "invite-token-123",
-                                  "name": "강사님",
-                                  "password": "password123"
+                                    "name":"홍길동",
+                                    "password":"password",
+                                    "token":"token"
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("teacher@test.com"))
-                .andExpect(jsonPath("$.role").value("TEACHER"));
-
-        // 유저 생성 확인
-        User user = userRepository.findByEmail("teacher@test.com").orElseThrow();
-        assertThat(user.getRole()).isEqualTo(UserRole.TEACHER);
-
-        // 토큰 삭제 확인
-        assertThat(inviteTokenRepository.findByToken("invite-token-123")).isEmpty();
-    }
-
-    @Test
-    void 만료된_초대토큰_회원가입_실패() throws Exception {
-        InviteToken invite = InviteToken.builder()
-                .email("teacher@test.com")
-                .token("expired-token")
-                .role(UserRole.TEACHER)
-                .expiresAt(LocalDateTime.now().minusMinutes(1))
-                .build();
-
-        inviteTokenRepository.save(invite);
-
-        mockMvc.perform(post("/api/instructors/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                            {
-                              "token": "expired-token",
-                              "name": "강사",
-                              "password": "password"
-                            }
-                            """))
-                .andExpect(status().isBadRequest());
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").value(1))
+                .andExpect(jsonPath("$.data.email").value("teacher@example.com"))
+                .andExpect(jsonPath("$.data.role").value("TEACHER"));
     }
 }

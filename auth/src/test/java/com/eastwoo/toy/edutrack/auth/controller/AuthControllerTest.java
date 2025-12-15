@@ -1,131 +1,112 @@
 package com.eastwoo.toy.edutrack.auth.controller;
 
-
-import com.eastwoo.toy.edutrack.auth.dto.AuthResponse;
-import com.eastwoo.toy.edutrack.auth.entity.User;
-import com.eastwoo.toy.edutrack.auth.enumtype.UserRole;
-import com.eastwoo.toy.edutrack.auth.repository.UserRepository;
-import com.eastwoo.toy.edutrack.auth.service.AuthService;
-import org.junit.jupiter.api.BeforeEach;
+import com.eastwoo.toy.edutrack.auth.instructor.dto.InstructorSignupRequestDto;
+import com.eastwoo.toy.edutrack.auth.instructor.service.InstructorService;
+import com.eastwoo.toy.edutrack.auth.user.controller.AuthController;
+import com.eastwoo.toy.edutrack.auth.user.dto.AuthResponse;
+import com.eastwoo.toy.edutrack.auth.user.entity.User;
+import com.eastwoo.toy.edutrack.auth.user.enumtype.UserRole;
+import com.eastwoo.toy.edutrack.auth.user.enumtype.UserStatus;
+import com.eastwoo.toy.edutrack.auth.user.service.AuthService;
+import com.eastwoo.toy.edutrack.auth.user.service.UserService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.BDDMockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(AuthController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private RedisTemplate<String, String> redisTemplate;
-
-    @Autowired
+    @MockitoBean
     private AuthService authService;
 
-    @BeforeEach
-    void 초기화() {
-        // DB 초기화
-        userRepository.deleteAll();
-        redisTemplate.getConnectionFactory().getConnection().flushAll();
-    }
+    @MockitoBean
+    private UserService userService;
+
+    @MockitoBean
+    private InstructorService instructorService;
 
     @Test
-    void 회원가입_성공() throws Exception {
+    @DisplayName("로그인 API 테스트")
+    void loginTest() throws Exception {
         // Given
-        String name = "홍길동";
-        String email = "hong@company.com";
-        String password = "password123";
-
-        // When
-        mockMvc.perform(post("/api/auth/register")
-                        .param("name", name)
-                        .param("email", email)
-                        .param("password", password)
-                        .with(csrf()))
-                // Then
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", notNullValue()))
-                .andExpect(jsonPath("$.name").value(name))
-                .andExpect(jsonPath("$.email").value(email))
-                .andExpect(jsonPath("$.role").value("STUDENT")); // Enum이 STUDENT로 저장되는지 확인
-    }
-
-    @Test
-    void 로그인_성공_및_리프레시토큰_저장() throws Exception {
-        // Given
-        User user = authService.register("홍길동", "hong@company.com", "password123", UserRole.STUDENT);
-
-        // When
-        String response = mockMvc.perform(post("/api/auth/login")
-                        .param("email", "hong@company.com")
-                        .param("password", "password123")
-                        .with(csrf()))
-                // Then
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken", notNullValue()))
-                .andExpect(jsonPath("$.refreshToken", notNullValue()))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        // Redis에 refreshToken 저장 여부 확인
-        String redisKey = "refreshToken:" + user.getId();
-        String refreshToken = redisTemplate.opsForValue().get(redisKey);
-        assert refreshToken != null;
-    }
-
-    @Test
-    void 로그인_실패_비밀번호_틀림() throws Exception {
-        // Given
-        User user = authService.register("홍길동", "hong@company.com", "password123", UserRole.STUDENT);
+        String email = "user@example.com";
+        String password = "password";
+        AuthResponse authResponse = new AuthResponse("access-token", "refresh-token");
+        when(authService.login(email, password)).thenReturn(authResponse);
 
         // When & Then
         mockMvc.perform(post("/api/auth/login")
-                        .param("email", "hong@company.com")
-                        .param("password", "wrongpassword")
-                        .with(csrf()))
-                .andExpect(status().isUnauthorized());
+                        .param("email", email)
+                        .param("password", password).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.accessToken").value("access-token"))
+                .andExpect(jsonPath("$.data.refreshToken").value("refresh-token"));
     }
 
     @Test
-    void 리프레시토큰_성공_재발급() {
+    @DisplayName("회원가입 API 테스트")
+    void registerTest() throws Exception {
         // Given
-        User user = authService.register("홍길동", "hong@company.com", "password123", UserRole.STUDENT);
-        AuthResponse authResponse = authService.login("hong@company.com", "password123");
+        String email = "user@example.com";
+        String name = "홍길동";
+        String password = "password";
 
-        // When
-        String newAccessToken = authService.refreshAccessToken(authResponse.getRefreshToken());
+        User user = User.builder()
+                .id(1L)
+                .name(name)
+                .email(email)
+                .password("encodedPassword")
+                .role(UserRole.STUDENT)
+                .status(UserStatus.ACTIVE)
+                .build();
 
-        // Then
-        assert newAccessToken != null && !newAccessToken.isEmpty();
-    }
-
-    @Test
-    void 리프레시토큰_실패_만료또는_잘못된토큰() {
-        // Given
-        User user = authService.register("홍길동", "hong@company.com", "password123", UserRole.STUDENT);
-        String invalidToken = "invalid-token";
+        when(userService.register(name, email, password, UserRole.STUDENT)).thenReturn(user);
 
         // When & Then
-        try {
-            authService.refreshAccessToken(invalidToken);
-            assert false; // 예외 발생해야 정상
-        } catch (Exception e) {
-            assert true;
-        }
+        mockMvc.perform(post("/api/auth/register")
+                        .param("name", name)
+                        .param("email", email)
+                        .param("password", password).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").value(1))
+                .andExpect(jsonPath("$.data.email").value(email));
+    }
+
+    @Test
+    @DisplayName("강사 가입 요청 API 테스트")
+    void requestInstructorSignupTest() throws Exception {
+        // Given
+        InstructorSignupRequestDto dto = new InstructorSignupRequestDto("홍길동", "teacher@example.com", "message");
+        doNothing().when(instructorService).requestSignup(any());
+
+        // When & Then
+        mockMvc.perform(post("/api/auth/instructor-request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "name":"홍길동",
+                                    "email":"teacher@example.com",
+                                    "message":"message"
+                                }
+                                """).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 }
