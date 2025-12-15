@@ -56,3 +56,6 @@ chat-service/build/
 pdf-service/build/
 audit-service/build/
 gateway-service/build/
+
+application-local.yml
+application-prod.yml
