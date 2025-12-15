@@ -6,8 +6,8 @@ import com.eastwoo.toy.edutrack.auth.instructor.dto.TeacherRegisterRequest;
 import com.eastwoo.toy.edutrack.auth.instructor.entity.InstructorPromotionRequest;
 import com.eastwoo.toy.edutrack.auth.instructor.entity.InstructorSignupRequest;
 import com.eastwoo.toy.edutrack.auth.invite.entity.InviteToken;
-import com.eastwoo.toy.edutrack.auth.email.EmailService;
 import com.eastwoo.toy.edutrack.auth.invite.service.InviteTokenService;
+import com.eastwoo.toy.edutrack.auth.notification.port.NotificationPort;
 import com.eastwoo.toy.edutrack.auth.user.entity.User;
 import com.eastwoo.toy.edutrack.auth.user.enumtype.UserRole;
 import com.eastwoo.toy.edutrack.auth.user.enumtype.UserStatus;
@@ -31,7 +31,7 @@ public class InstructorService {
     private final InviteTokenService inviteTokenService;
     private final InstructorSignupRequestRepository signupRequestRepository;
     private final InstructorPromotionRequestRepository promotionRequestRepository;
-    private final EmailService emailService;
+    private final NotificationPort notificationPort;
     private final PasswordEncoder passwordEncoder;
 
 
@@ -65,7 +65,7 @@ public class InstructorService {
                 UserRole.TEACHER
         );
 
-        emailService.sendInviteEmail(request.email(), token);
+        notificationPort.sendInviteEmail(request.email(), token);
     }
 
     /* 강사 가입 요청 */
@@ -134,7 +134,7 @@ public class InstructorService {
                 UserRole.TEACHER
         );
 
-        emailService.sendInviteEmail(request.getEmail(), token);
+        notificationPort.sendInviteEmail(request.getEmail(), token);
     }
 
     /* =========================
