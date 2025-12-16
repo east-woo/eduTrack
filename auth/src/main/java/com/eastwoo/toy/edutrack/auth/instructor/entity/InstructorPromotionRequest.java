@@ -44,6 +44,12 @@ public class InstructorPromotionRequest {
                 .build();
     }
 
+    private void validatePending() {
+        if (this.status != SignupRequestStatus.PENDING) {
+            throw new IllegalStateException("이미 처리된 강사 승급 요청입니다.");
+        }
+    }
+
     public void approve() {
         validatePending();
         this.status = SignupRequestStatus.APPROVED;
@@ -52,11 +58,5 @@ public class InstructorPromotionRequest {
     public void reject() {
         validatePending();
         this.status = SignupRequestStatus.REJECTED;
-    }
-
-    private void validatePending() {
-        if (this.status != SignupRequestStatus.PENDING) {
-            throw new IllegalStateException("이미 처리된 강사 승급 요청입니다.");
-        }
     }
 }

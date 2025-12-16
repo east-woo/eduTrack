@@ -163,7 +163,9 @@ public class InstructorService {
                         );
 
         request.approve();
-        request.getUser().setRole(UserRole.TEACHER);
+
+        /*강사로 변경*/
+        request.getUser().promoteToInstructor();
     }
 
     /* =========================

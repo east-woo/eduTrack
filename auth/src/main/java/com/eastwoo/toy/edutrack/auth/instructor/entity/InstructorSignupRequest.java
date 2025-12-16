@@ -37,19 +37,6 @@ public class InstructorSignupRequest {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    public void approve() {
-        if (this.status != SignupRequestStatus.PENDING) {
-            throw new IllegalStateException("이미 처리된 요청입니다.");
-        }
-        this.status = SignupRequestStatus.APPROVED;
-    }
-
-    public void reject() {
-        if (this.status != SignupRequestStatus.PENDING) {
-            throw new IllegalStateException("이미 처리된 요청입니다.");
-        }
-        this.status = SignupRequestStatus.REJECTED;
-    }
 
     /* 정적 팩토리 */
     public static InstructorSignupRequest create(String name, String email, String message) {
@@ -60,4 +47,19 @@ public class InstructorSignupRequest {
                 .build();
     }
 
+    private void validatePending() {
+        if (this.status != SignupRequestStatus.PENDING) {
+            throw new IllegalStateException("이미 처리된 강사 승급 요청입니다.");
+        }
+    }
+
+    public void approve() {
+        validatePending();
+        this.status = SignupRequestStatus.APPROVED;
+    }
+
+    public void reject() {
+        validatePending();
+        this.status = SignupRequestStatus.REJECTED;
+    }
 }

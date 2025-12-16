@@ -42,4 +42,11 @@ public class User {
     @Column(name = "created_at", nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public void promoteToInstructor() {
+        if (this.role == UserRole.TEACHER) {
+            throw new IllegalStateException("이미 강사입니다.");
+        }
+        this.role = UserRole.TEACHER;
+    }
 }
